@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Candy Trace app icon: one tablet, photographed on the left, traced to 1-bit on the right. -->
+  <defs>
+    <clipPath id="left"><rect x="0" y="0" width="512" height="1024"/></clipPath>
+    <clipPath id="right"><rect x="512" y="0" width="512" height="1024"/></clipPath>
+    <linearGradient id="pill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F58A7C"/>
+      <stop offset="1" stop-color="#E9695C"/>
+    </linearGradient>
+  </defs>
+  <!-- macOS squircle ground -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="#FAF8F3"/>
+  <!-- tablet silhouette, shared by both halves -->
+  <g id="tab">
+    <rect x="192" y="352" width="640" height="320" rx="160"/>
+  </g>
+  <!-- LEFT: the photo side -->
+  <g clip-path="url(#left)">
+    <use href="#tab" fill="url(#pill)"/>
+    <!-- score line + soft edge highlight, like a pressed tablet -->
+    <line x1="512" y1="392" x2="512" y2="632" stroke="#C94F44" stroke-width="18" stroke-linecap="round"/>
+    <rect x="192" y="352" width="640" height="320" rx="160" fill="none" stroke="#C94F44" stroke-width="14" opacity="0.55"/>
+  </g>
+  <!-- RIGHT: the 1-bit trace -->
+  <g clip-path="url(#right)">
+    <use href="#tab" fill="#FFFFFF"/>
+    <use href="#tab" fill="none" stroke="#111111" stroke-width="40"/>
+    <line x1="536" y1="396" x2="536" y2="628" stroke="#111111" stroke-width="40" stroke-linecap="round"/>
+  </g>
+</svg>

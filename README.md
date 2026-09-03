@@ -1,6 +1,14 @@
-# 🍬 Candy Trace
+<p align="center">
+  <img src="brand/icon-1024.png" width="128" alt="Candy Trace icon: a tablet, photographed on the left, traced to 1-bit line art on the right">
+</p>
+
+# Candy Trace
 
 > Turn product photography into precise, 1-bit technical line art using the Google Gemini API.
+
+<p align="center">
+  <img src="docs/screenshots/01-dashboard.png" width="800" alt="Candy Trace dashboard on macOS">
+</p>
 
 Candy Trace is a local-first workspace for producing clean, consistent, style-matched line art
 from photographs at scale. It runs as a web app or as a native macOS app, keeps all your data on
@@ -47,6 +55,22 @@ npm run app:dev
 The bundle is **not code-signed**. On first launch macOS will block it; right-click the app and
 choose *Open*, or run `xattr -dr com.apple.quarantine "/Applications/Candy Trace.app"`. To
 distribute it properly you need an Apple Developer ID certificate and notarization.
+
+---
+
+## Screenshots
+
+| | |
+| --- | --- |
+| ![Dashboard](docs/screenshots/01-dashboard.png) | ![API key settings](docs/screenshots/02-api-key-settings.png) |
+| **Dashboard** — library counts, queue state, activity log | **Settings → API Key** — your key, verified live, stored on this device |
+| ![Candy Library](docs/screenshots/03-candy-library.png) | ![Work Queue](docs/screenshots/04-work-queue.png) |
+| **Candy Library** — drop photos, auto-classify by shape | **Work Queue** — match styles, run the batch, approve results |
+| ![Style Library](docs/screenshots/05-style-library.png) | ![Sandbox](docs/screenshots/06-sandbox.png) |
+| **Style Library** — photo + hand-made trace pairs that define the line style | **Sandbox** — multi-turn prompt experiments on a single image |
+
+Captured from the current build with an empty workspace. Sample photos are not
+included in this repository; bring your own and follow the [naming convention](#file-naming-convention).
 
 ---
 
