@@ -38,6 +38,34 @@ function classifyGeminiError(errorMessage: string): { retryable: boolean; status
     return { retryable: true, status: null };
 }
 
+/**
+ * Read the text of a Gemini response, or throw an error that says what actually happened.
+ *
+ * `response.text` is `string | undefined`: it is undefined whenever the model returned no
+ * text part, which is exactly what happens on a safety block, a recitation block, or a
+ * MAX_TOKENS truncation. Calling `.trim()` on it directly turns every one of those cases
+ * into "Cannot read properties of undefined (reading 'trim')", which tells the user nothing
+ * and matches no branch of the retry classifier.
+ */
+function requireResponseText(response: GenerateContentResponse): string {
+    const text = response.text;
+    if (typeof text === 'string' && text.trim()) {
+        return text.trim();
+    }
+
+    const blockReason = response.promptFeedback?.blockReason;
+    if (blockReason) {
+        throw new Error(`Request was blocked. Reason: ${blockReason}.`);
+    }
+
+    const finishReason = response.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
+        throw new Error(`The model stopped early (finishReason: ${finishReason}) and returned no text.`);
+    }
+
+    throw new Error('The model returned an empty response.');
+}
+
 export namespace geminiService {
     
     /**
@@ -163,7 +191,7 @@ export namespace geminiService {
           }
 
           const response = await ai.models.generateContent({ model, contents: { parts: [candyPhotoPart, textPart] }, config });
-          const jsonText = response.text.trim();
+          const jsonText = requireResponseText(response);
           const result = JSON.parse(jsonText);
 
           if (!result.bucket || !BUCKETS.includes(result.bucket)) {
@@ -206,7 +234,7 @@ export namespace geminiService {
                 const textPart = { text: prompt };
                 
                 const response = await ai.models.generateContent({ model, contents: { parts: [imagePart, textPart] }});
-                const extractedText = response.text.trim();
+                const extractedText = requireResponseText(response);
 
                 if (!extractedText) {
                     throw new Error("API did not return any text.");
@@ -276,7 +304,7 @@ Provide your analysis in JSON format.`;
                 }
 
                 const response = await ai.models.generateContent({ model, contents: { parts: [imageAPart, imageBPart, textPart] }, config });
-                const jsonText = response.text.trim();
+                const jsonText = requireResponseText(response);
                 const result = JSON.parse(jsonText);
 
                 if (typeof result.areDifferent !== 'boolean') {
@@ -371,7 +399,7 @@ ${currentMainPrompt}
             },
           });
 
-          const jsonText = response.text.trim();
+          const jsonText = requireResponseText(response);
           const result = JSON.parse(jsonText);
 
           if (!result.chatResponse || !result.suggestedSystemInstruction || !result.suggestedMainPrompt) {
@@ -457,7 +485,7 @@ Provide your analysis in JSON format.`;
                 }
 
                 const response = await ai.models.generateContent({ model, contents: { parts: [image1Part, image2Part, textPart] }, config });
-                const jsonText = response.text.trim();
+                const jsonText = requireResponseText(response);
                 const result = JSON.parse(jsonText);
                 
                 if (typeof result.isSimilar !== 'boolean') {
@@ -547,7 +575,7 @@ Provide your response in JSON format. Your reasoning must focus on the quality o
                     params.requestOptions = { signal };
                 }
                 const response = await ai.models.generateContent(params);
-                const jsonText = response.text.trim();
+                const jsonText = requireResponseText(response);
                 const result = JSON.parse(jsonText);
 
                 if (!result.quality || !['Good', 'Poor', 'Uncertain'].includes(result.quality)) {
@@ -631,7 +659,7 @@ Respond in JSON format.`;
         };
 
         const response = await ai.models.generateContent({ model, contents: { parts: [candyPhotoPart, testTracePart, verificationTextPart] }, config: verificationConfig });
-        const jsonText = response.text.trim();
+        const jsonText = requireResponseText(response);
         const result = JSON.parse(jsonText);
 
         if (typeof result.isTraceSuccessful !== 'boolean') {

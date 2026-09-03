@@ -111,9 +111,11 @@ export const apiKeyService = {
     if (!trimmed) return { ok: false, error: 'Enter a key first.' };
 
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(trimmed)}&pageSize=1`,
-      );
+      // Header rather than ?key= so the secret never lands in browser history,
+      // proxy access logs or the DevTools URL column.
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', {
+        headers: { 'x-goog-api-key': trimmed },
+      });
       if (res.ok) {
         const body = await res.json();
         return { ok: true, modelCount: Array.isArray(body.models) ? body.models.length : 0 };

@@ -7,7 +7,10 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 3000,
-        host: '0.0.0.0',
+        // Loopback only. Binding 0.0.0.0 served the app — including any build-time
+        // API key inlined by `define` below — to everyone on the local network.
+        // Use `npm run dev -- --host` when LAN access is actually wanted.
+        host: '127.0.0.1',
       },
       plugins: [react()],
       define: {

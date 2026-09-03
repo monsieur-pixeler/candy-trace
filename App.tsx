@@ -50,8 +50,6 @@ const App: React.FC = () => {
             };
             
             const currentStateString = JSON.stringify(currentStateToSave);
-            // Update the last saved state *before* the async operation to prevent race conditions
-            lastSavedState.current = currentStateString;
 
             await Promise.all([
                 dbService.savePillLibrary(currentStateToSave.pillLibrary, currentStateToSave.settings),
@@ -60,6 +58,13 @@ const App: React.FC = () => {
                 dbService.saveSettingsLocal(currentStateToSave.settings)
             ]);
             
+            // Only now is the state genuinely persisted. Marking it saved before the
+            // await meant a rejected write (quota exceeded, blocked IndexedDB, expired
+            // GCS token) was recorded as a success and never retried — the user kept
+            // working and lost everything on reload. Concurrency is already handled by
+            // isSavingRef above, so this does not reintroduce a race.
+            lastSavedState.current = currentStateString;
+
             dispatch({ type: 'SET_LAST_SAVE', payload: Date.now() });
             addLog('SUCCESS', `${logPrefix} Session saved successfully.`);
         } catch (e) {

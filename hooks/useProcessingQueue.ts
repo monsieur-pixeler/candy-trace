@@ -200,6 +200,12 @@ export function useProcessingQueue(
 
         if (processingQueue.length > 0 && !isProcessingRef.current && isQueueRunning) {
             processJob(processingQueue[0]);
+        } else if (processingQueue.length === 0 && !isProcessingRef.current && isQueueRunning) {
+            // The batch finished on its own. Without this, isQueueRunning stays true until
+            // the user happens to press Stop, and App.tsx treats the app as permanently
+            // "busy" — auto-save never runs again for the rest of the session.
+            dispatch({ type: 'STOP_QUEUE' });
+            addLog('SUCCESS', 'Work queue finished.');
         }
 
     }, [processingQueue, workPairs, styleSets, settings, dispatch, addLog, isQueueRunning]);

@@ -20,8 +20,7 @@
     "jszip": "^3.10.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-dropzone": "^14.4.1",
-    "react-router-dom": "^7.8.2"
+    "react-dropzone": "^14.4.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",

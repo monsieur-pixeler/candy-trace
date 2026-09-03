@@ -142,15 +142,32 @@ export namespace backupService {
     }
 
     export async function importFullWorkspace(zipFile: File): Promise<void> {
-        await dbService.clearAllData();
-        const zip = await JSZip.loadAsync(zipFile);
-        
+        // Open and validate the archive BEFORE touching existing data. Previously the
+        // workspace was wiped first, so picking the wrong file (a photo, a truncated
+        // download, a zip from another app) destroyed everything and then threw.
+        let zip: JSZip;
+        try {
+            zip = await JSZip.loadAsync(zipFile);
+        } catch (e) {
+            throw new Error(`"${zipFile.name}" is not a readable ZIP archive. Nothing was changed.`);
+        }
+
         const manifestFile = zip.file(MANIFEST_FILENAME);
         if (!manifestFile) {
-            throw new Error(`Backup is invalid: missing ${MANIFEST_FILENAME}.`);
+            throw new Error(`Backup is invalid: missing ${MANIFEST_FILENAME}. Nothing was changed.`);
         }
-        
-        const manifest: BackupManifest = JSON.parse(await manifestFile.async('string'));
+
+        let manifest: BackupManifest;
+        try {
+            manifest = JSON.parse(await manifestFile.async('string'));
+        } catch (e) {
+            throw new Error(`Backup manifest is corrupt. Nothing was changed.`);
+        }
+        if (!Array.isArray(manifest.pillLibrary) || !Array.isArray(manifest.styleSets)) {
+            throw new Error(`Backup manifest has an unexpected shape. Nothing was changed.`);
+        }
+
+        await dbService.clearAllData();
 
         const initialTraceabilityResult: TraceabilityResult = { status: 'idle' };
 
