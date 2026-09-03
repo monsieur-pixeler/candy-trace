@@ -17,6 +17,23 @@ your own machine, and talks directly to Google's Gemini API with a key you suppl
 **Status: proof of concept.** It works end to end, but see [Known limitations](#known-limitations)
 before relying on it for production work.
 
+### Who it's for
+
+Cataloguing tablets and confectionery often calls for a **1-bit line drawing** — pure black
+contours on white — of the outline, the embossed or debossed mark, the score line and the bevel.
+Tracing those by hand in Illustrator is slow and inconsistent across hundreds of items. Candy
+Trace replaces that with three things working together:
+
+- **Style-aware tracing.** You supply reference pairs (a photo plus a hand-made trace). The model
+  learns line weight, how bevels are drawn and how imprinted text is rendered from *your*
+  examples, not a generic style.
+- **Shape classification.** Every photo is sorted into a shape bucket first, so a hexagonal tablet
+  is matched to a hexagonal style reference rather than a round one.
+- **Two-sided intelligence.** Front and back are handled as a pair. *Compare Sides* asks the model
+  whether side B differs enough to need its own trace, or can reuse side A's result.
+
+Built for designers, archivists and QC teams who need consistent output at scale.
+
 ---
 
 ## Quick start
@@ -100,6 +117,24 @@ Auto-Match Styles → Start Processing → review and approve → export from Ap
 
 Both are set in `services/geminiService.ts` and `constants.ts`.
 
+### Shape buckets
+
+Classification places each item into one of these buckets (defined in `constants.ts`). Style
+references live in the same buckets, and *Auto-Match Styles* only pairs within a bucket.
+
+| Bucket | Typical items |
+| --- | --- |
+| Round | Circular tablets, dragees |
+| Oval/Oblong | Capsules, elongated lozenges |
+| Square · Rect/Logo | Square tablets; rectangular pressings carrying a logo |
+| Bar/Brick (Horizontal) · Bar/Brick (Vertical) | Bar-shaped pressings, by orientation |
+| Shield/Emblem · Crest/Badge | Heraldic and badge-shaped outlines |
+| Face/Head | Character heads and faces |
+| Hex/Polygon · Diamond/Kite · Triangle | Geometric outlines |
+| Rocket · Bottle · Bag · Heart · Tab/Quarter | Recognisable object silhouettes |
+| Novelty/Other | Anything irregular that fits nothing above |
+| Unassigned | Not yet classified, or set manually |
+
 ---
 
 ## File naming convention
@@ -135,6 +170,19 @@ Everything is local-first:
 - The generation prompt is embedded in each output PNG's metadata for traceability.
 
 Clearing browser site data deletes your libraries. Take a snapshot before you do.
+
+---
+
+## Getting good results
+
+1. **Shoot for contrast.** A neutral, even background (white or light grey) with diffuse light.
+   Hard cast shadows get traced as contour.
+2. **Match the reference to the item.** The closer a style reference is in shape and mark type,
+   the more consistent the output. A few well-chosen pairs per bucket beat many mediocre ones.
+3. **Run Compare Sides before a big batch.** It skips a second generation when side B adds
+   nothing, and forces one when the back carries a different mark or score line.
+4. **Snapshot before you experiment.** *Settings → Data & Backups* saves a named copy of the whole
+   workspace in one click.
 
 ---
 
