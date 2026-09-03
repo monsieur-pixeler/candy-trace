@@ -1,0 +1,21 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Preserve the pre-Tailwind-v3 default border colour the components were written against. */
+  *,
+  ::before,
+  ::after {
+    border-color: theme('colors.gray.200');
+  }
+}

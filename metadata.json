@@ -1,0 +1,6 @@
+{
+  "name": "Candy Trace v0.5",
+  "description": "An application to turn candy photos into pure black, 1-bit line-art PNGs using Google's Gemini API, guided by a library of style-reference traces. It batches jobs, shows progress, auto-routes each candy to the right style bucket, and preserves sessions/presets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
