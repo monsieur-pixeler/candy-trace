@@ -10,40 +10,26 @@
   <img src="docs/trace-grid.jpg" width="800" alt="Product photos on the left, generated 1-bit line art on the right">
 </p>
 
-Give it a few hundred product photos and it turns them into print-ready line drawings in one run,
-all in the same house style.
+Give it a few hundred product photos and it turns them into 1-bit line drawings in one run, all in the same house style.
 
-Tracing one item by hand takes about twenty minutes. A library of 272 items is over 90 hours of
-work — now a single batch that runs while you do something else, with an approval step before
-anything goes into the library.
+- **Tracing one item by hand takes about twenty minutes.** A library of 272 items is over 90 hours. Now it is one batch that runs while you do something else, with an approval step before anything goes into the library.
+- **Only the drawing is AI.** Sorting, style matching, batching and the archive are plain code. That is why results are consistent.
+- **Every PNG carries its own prompt** in the metadata. A trace made today can be regenerated the same way years from now.
+- **Local-first.** Runs as a web app or a native macOS app. Your photos never leave your machine except for the Gemini API call, with your own key.
 
-Only the drawing is AI. Sorting photos into shape categories, matching each one to the right style
-reference, running the batch and keeping the archive is plain code — which is why results are
-consistent and reproducible. Every generated PNG carries the exact prompt that produced it in its
-metadata, so a trace made today can be regenerated the same way years from now.
+**Status: working prototype.** It does the full job end to end; the rough edges are under [Known limitations](#known-limitations).
 
-Runs locally as a web app or a native macOS app. Your photos never leave your machine except for
-the API call to Google Gemini, with your own key.
+---
 
-**Status: working prototype.** It does the full job end to end; the rough edges are listed under
-[Known limitations](#known-limitations).
+## How it works
 
-### Who it's for
+Upload style references → upload photos → auto-match → run the batch → approve → export as ZIP.
 
-Cataloguing tablets and confectionery often calls for a **1-bit line drawing** — pure black
-contours on white — of the outline, the embossed or debossed mark, the score line and the bevel.
-Tracing those by hand in Illustrator is slow and inconsistent across hundreds of items. Candy
-Trace replaces that with three things working together:
+- **Style-aware tracing.** You supply reference pairs: a photo plus a hand-made trace. The model learns line weight, bevels and imprinted text from *your* examples, not a generic style.
+- **Shape buckets first.** Every photo is classified into one of 18 shape buckets (round, oval, shield, hex, bar…) before matching, so a hexagonal tablet gets a hexagonal reference. Defined in `constants.ts`.
+- **Two sides as a pair.** *Compare Sides* asks the model whether side B differs enough to need its own trace, or can reuse side A.
 
-- **Style-aware tracing.** You supply reference pairs (a photo plus a hand-made trace). The model
-  learns line weight, how bevels are drawn and how imprinted text is rendered from *your*
-  examples, not a generic style.
-- **Shape classification.** Every photo is sorted into a shape bucket first, so a hexagonal tablet
-  is matched to a hexagonal style reference rather than a round one.
-- **Two-sided intelligence.** Front and back are handled as a pair. *Compare Sides* asks the model
-  whether side B differs enough to need its own trace, or can reuse side A's result.
-
-Built for designers, archivists and QC teams who need consistent output at scale.
+Models: `gemini-2.5-flash-image` for the drawing, `gemini-2.5-flash` for classification and side comparison.
 
 ---
 
@@ -51,145 +37,52 @@ Built for designers, archivists and QC teams who need consistent output at scale
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
 
-Open <http://localhost:3000>, go to **Settings → API Key**, and paste a Gemini API key from
-[aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+Go to **Settings → API Key** and paste a key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). It is stored in your browser only and sent nowhere but Google.
 
-The key is stored in your browser's local storage on that device only. It is never committed,
-never bundled, and never sent anywhere except to Google's API.
+> **Image generation needs a paid Google Cloud project.** The free tier has no quota for `gemini-2.5-flash-image` and returns HTTP 429. Classification does work on the free tier.
 
-> **Image generation needs a paid Google Cloud project.** The Gemini free tier has no quota for
-> `gemini-2.5-flash-image`, so trace generation returns HTTP 429 on a free key. Shape
-> classification (`gemini-2.5-flash`) does work on the free tier.
-
----
-
-## Native macOS app
+Other commands:
 
 ```bash
-npm run app:build
+npm run build        # web build → dist/
+npm run typecheck    # tsc --noEmit
+npm run app:dev      # Tauri dev with hot reload
+npm run app:build    # macOS .app + .dmg → src-tauri/target/release/bundle/
 ```
 
-Produces `Candy Trace.app` and a `.dmg` in `src-tauri/target/release/bundle/`.
+The macOS build needs [Rust](https://rustup.rs) and Xcode command line tools. It is **not code-signed**: right-click → *Open* on first launch, or `xattr -dr com.apple.quarantine "/Applications/Candy Trace.app"`.
 
-Requires [Rust](https://rustup.rs) and Xcode command line tools. For development with hot reload:
-
-```bash
-npm run app:dev
-```
-
-The bundle is **not code-signed**. On first launch macOS will block it; right-click the app and
-choose *Open*, or run `xattr -dr com.apple.quarantine "/Applications/Candy Trace.app"`. To
-distribute it properly you need an Apple Developer ID certificate and notarization.
+Never set `GEMINI_API_KEY` in `.env` for a build you distribute — Vite inlines it into the bundle.
 
 ---
 
-## How it works
+## File naming
 
-Candy Trace is organised around a linear workflow, one view per stage:
-
-| View | What it does |
-| --- | --- |
-| **Dashboard** | Overview of libraries, queue state and recent activity |
-| **Candy Library** | Upload source photos; auto-classify each item into a shape bucket |
-| **Style Library** | Curate photo + hand-made trace pairs that teach the AI your line style |
-| **Work Queue** | Configure and run batch jobs; auto-match candies to styles |
-| **Trace Archive** | Searchable archive of every generated trace |
-| **Approved Library** | Traces you have marked production-ready; batch-export as ZIP |
-| **Sandbox** | Multi-turn chat interface for prompt engineering and one-off generations |
-
-**Typical run:** upload style references → upload candy photos → send to Work Queue →
-Auto-Match Styles → Start Processing → review and approve → export from Approved Library.
-
-### Models used
-
-| Task | Model |
-| --- | --- |
-| Line-art generation | `gemini-2.5-flash-image` |
-| Shape classification, side comparison | `gemini-2.5-flash` |
-
-Both are set in `services/geminiService.ts` and `constants.ts`.
-
-### Shape buckets
-
-Classification places each item into one of these buckets (defined in `constants.ts`). Style
-references live in the same buckets, and *Auto-Match Styles* only pairs within a bucket.
-
-| Bucket | Typical items |
-| --- | --- |
-| Round | Circular tablets, dragees |
-| Oval/Oblong | Capsules, elongated lozenges |
-| Square · Rect/Logo | Square tablets; rectangular pressings carrying a logo |
-| Bar/Brick (Horizontal) · Bar/Brick (Vertical) | Bar-shaped pressings, by orientation |
-| Shield/Emblem · Crest/Badge | Heraldic and badge-shaped outlines |
-| Face/Head | Character heads and faces |
-| Hex/Polygon · Diamond/Kite · Triangle | Geometric outlines |
-| Rocket · Bottle · Bag · Heart · Tab/Quarter | Recognisable object silhouettes |
-| Novelty/Other | Anything irregular that fits nothing above |
-| Unassigned | Not yet classified, or set manually |
-
----
-
-## File naming convention
-
-Automatic parsing depends on these patterns.
-
-**Candy photos** — filename ends with the side marker:
+Side detection and style pairing depend on these patterns.
 
 ```
-MyPill_A.jpg        CoolCandy_front.png
-[Name]_[A|B|1|2|front|back].[jpg|png|webp]
-```
-
-**Style files** — a photo plus its corresponding hand-made trace:
-
-```
-ThickContour_A.jpg          ← the photo
-ThickContour_trace_A.png    ← the 1-bit trace
-[Name]_[A|B].[jpg|png|webp]
-[Name]_trace_[A|B].png
+MyPill_A.jpg   MyPill_B.jpg          photos:  [Name]_[A|B|1|2|front|back].[jpg|png|webp]
+ThickContour_A.jpg                   style photo:  [Name]_[A|B].[jpg|png|webp]
+ThickContour_trace_A.png             style trace:  [Name]_trace_[A|B].png
 ```
 
 ---
 
-## Data & storage
+## Data
 
-Everything is local-first:
-
-- **IndexedDB** holds libraries, work sessions, the trace archive and settings.
-- **Local snapshots** let you save and restore named workspace states.
-- **Google Cloud Storage sync** is optional, off by default, and configured under
-  *Settings → Data & Backups*.
-- The generation prompt is embedded in each output PNG's metadata for traceability.
-
-Clearing browser site data deletes your libraries. Take a snapshot before you do.
-
----
-
-## Getting good results
-
-1. **Shoot for contrast.** A neutral, even background (white or light grey) with diffuse light.
-   Hard cast shadows get traced as contour.
-2. **Match the reference to the item.** The closer a style reference is in shape and mark type,
-   the more consistent the output. A few well-chosen pairs per bucket beat many mediocre ones.
-3. **Run Compare Sides before a big batch.** It skips a second generation when side B adds
-   nothing, and forces one when the back carries a different mark or score line.
-4. **Snapshot before you experiment.** *Settings → Data & Backups* saves a named copy of the whole
-   workspace in one click.
+- Libraries, sessions, archive and settings live in **IndexedDB**, in your browser.
+- **Snapshots** save and restore a named copy of the whole workspace (*Settings → Data & Backups*).
+- **Google Cloud Storage sync** is optional and off by default.
+- Clearing site data deletes your libraries. Snapshot first.
 
 ---
 
 ## Tech stack
 
-| Layer | Choice |
-| --- | --- |
-| UI | React 19, TypeScript, Tailwind CSS 3 |
-| Build | Vite 6 |
-| Desktop shell | Tauri 2 |
-| AI | Google Gemini via `@google/genai` |
-| Local storage | IndexedDB via `idb` |
+React 19 · TypeScript · Tailwind CSS 3 · Vite 6 · Tauri 2 · `@google/genai` · IndexedDB via `idb`
 
 ---
 
@@ -198,29 +91,11 @@ Clearing browser site data deletes your libraries. Take a snapshot before you do
 These are real and known, not hidden:
 
 - **No code signing.** The macOS bundle triggers Gatekeeper on first launch.
-- **Large libraries render eagerly.** Several hundred items in one view will be slow; there is no
-  list virtualization yet.
+- **Large libraries render eagerly.** Several hundred items in one view will be slow; no list virtualization yet.
 - **Batch processing is not resumable.** Closing the window mid-batch loses in-flight progress.
 - **Single JS bundle (~980 kB).** No code splitting yet.
-- **`classificationCache.ts`** ships a large table of pre-computed classification results keyed by
-  file hash. It speeds up repeat runs on the original dataset and is inert for new images.
+- **`classificationCache.ts`** ships pre-computed results keyed by file hash. Speeds up repeat runs on the original dataset; inert for new images.
 - **UI is English only.**
-
----
-
-## Development
-
-```bash
-npm run dev         # Vite dev server on :3000
-npm run build       # production web build → dist/
-npm run typecheck   # tsc --noEmit
-npm run app:dev     # Tauri dev with hot reload
-npm run app:build   # macOS .app + .dmg
-```
-
-`.env` is optional and only useful locally — see `.env.example`. Never set `GEMINI_API_KEY` for a
-build you intend to distribute: Vite inlines the value into the JavaScript bundle, so every user
-of that build would receive your key.
 
 ---
 
