@@ -7,15 +7,26 @@
 > Turn product photography into precise, 1-bit technical line art using the Google Gemini API.
 
 <p align="center">
-  <img src="docs/screenshots/01-dashboard.png" width="800" alt="Candy Trace dashboard on macOS">
+  <img src="docs/trace-grid.jpg" width="800" alt="Product photos on the left, generated 1-bit line art on the right">
 </p>
 
-Candy Trace is a local-first workspace for producing clean, consistent, style-matched line art
-from photographs at scale. It runs as a web app or as a native macOS app, keeps all your data on
-your own machine, and talks directly to Google's Gemini API with a key you supply.
+Give it a few hundred product photos and it turns them into print-ready line drawings in one run,
+all in the same house style.
 
-**Status: proof of concept.** It works end to end, but see [Known limitations](#known-limitations)
-before relying on it for production work.
+Tracing one item by hand takes about twenty minutes. A library of 272 items is over 90 hours of
+work — now a single batch that runs while you do something else, with an approval step before
+anything goes into the library.
+
+Only the drawing is AI. Sorting photos into shape categories, matching each one to the right style
+reference, running the batch and keeping the archive is plain code — which is why results are
+consistent and reproducible. Every generated PNG carries the exact prompt that produced it in its
+metadata, so a trace made today can be regenerated the same way years from now.
+
+Runs locally as a web app or a native macOS app. Your photos never leave your machine except for
+the API call to Google Gemini, with your own key.
+
+**Status: working prototype.** It does the full job end to end; the rough edges are listed under
+[Known limitations](#known-limitations).
 
 ### Who it's for
 
